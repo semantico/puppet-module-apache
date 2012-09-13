@@ -1,0 +1,42 @@
+#!/bin/sh
+
+export PATH="/opt/semantico/bin:$PATH"
+
+LOGFILE="<%= logfile -%>"
+<% if graph_title.to_s != "" -%>
+TITLE="<%= graph_title -%>"
+<% else -%>
+TITLE="<%= plugin_name -%>"
+<% end -%>
+DELTA="/var/tmp/munin-pagespeed-reqtime.<%= plugin_name -%>.delta"
+OPTS="<%= opts -%>"
+
+if [ "X$1" = "Xconfig" ]; then
+    echo "graph_title mod_pagespeed times - Requests per Second for $TITLE"
+    echo "graph_vlabel reqs_per_sec"
+    echo "graph_category <%= graph_category -%>"
+    echo "s0_200.label 0-200ms"
+    echo "s0_200.draw AREA"
+    echo "s200_500.label 200-500ms"
+    echo "s200_500.draw STACK"
+    echo "s500_1000.label 500-1000ms"
+    echo "s500_1000.draw STACK"
+    echo "s1000_2000.label 1-2s"
+    echo "s1000_2000.draw STACK"
+    echo "s2000_3000.label 2-3s"
+    echo "s2000_3000.draw STACK"
+    echo "s3000_5000.label 3-5s"
+    echo "s3000_5000.draw STACK"
+    echo "s5000_10000.label 5-10s"
+    echo "s5000_10000.draw STACK"
+    echo "s10000_30000.label 10-30s"
+    echo "s10000_30000.draw STACK"
+    echo "s30000_60000.label 30-60s"
+    echo "s30000_60000.draw STACK"
+    echo "s60000_300000.label 60s-300s"
+    echo "s60000_300000.draw STACK"
+    echo "s300000_10000000.label 300s+"
+    echo "s300000_10000000.draw STACK"
+else 
+    delta_reqtime_check -p -u $OPTS $LOGFILE $DELTA
+fi

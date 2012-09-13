@@ -1,0 +1,27 @@
+#- Puppet Templated Override Section
+
+
+#munin has 3 apache graphing plugins:-
+#apache_accesses
+#apache_processes
+#apache_volume
+#which require this extended status page
+
+<IfModule mod_status.c>
+    ExtendedStatus On
+</IfModule>
+
+<Location /server-status>
+    SetHandler server-status
+    Order deny,allow
+    Deny from all
+    #localhost
+    Allow from 127.0.0.1/8
+<% if has_variable?('apache_server_status_cidrs') -%>
+<%   apache_server_status_cidrs.to_a.each do |cidr| -%>
+    Allow from <%= cidr %>
+<%   end -%>
+<% end -%>
+    Satisfy Any
+</Location>
+

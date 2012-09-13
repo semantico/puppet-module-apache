@@ -1,0 +1,156 @@
+    
+<% if balancermember -%> 
+<Proxy balancer://<%= balancergroup %>>
+    <% balancermember.each do |val| -%> 
+    BalancerMember <%= val %>
+<% end %>
+</Proxy>
+<% end -%>
+
+<VirtualHost <%= our_vhost_listen %>:<%= port -%> >
+
+    ServerAdmin  <%= serveradmin %>
+    DocumentRoot <%= html_dir_full %>
+    ServerName   <%= vhost_name %>
+    ServerAlias   www.<%= vhost_name %> <%= serveralias %>
+    CustomLog "|<%= cronolog %> <%= access_log -%>" <%= customlog %>
+    ErrorLog "|<%= cronolog %> <%= error_log -%>"
+    LogLevel <%= vhost_loglevel %>
+    #Generally left off
+    ServerSignature <%= serversignature %>
+
+<% if apache_alias -%>
+    Alias <%= apache_alias %>
+<% end -%>  
+<% if scriptalias -%>
+    ScriptAlias <%= scriptalias %>
+<% end -%> 
+  
+    <Directory <%= html_dir_full %>>
+        <% if directoryindex -%>
+        DirectoryIndex <%= directoryindex %>
+        <% end -%>   
+        Options <%= options %>
+        AllowOverride <%= allowoverride %>
+        Order <%= auth_order %>
+<% allow.each do |val| -%> 
+        <%= val %>
+<% end -%>
+<% if auth_enable -%>
+        AuthType <%= our_auth_type %>
+        AuthName "<%= our_auth_name %>"
+        AuthUserFile <%= our_auth_user_file %>
+<%    auth_require_list.each do |require_entry| -%>
+        Require <%= require_entry %>
+<%    end -%>
+<% end -%>
+<% if webdav and our_webdav_alias.to_s == '/' -%>
+        Dav On
+<% end -%>
+    </Directory>
+    
+<% if webdav and our_webdav_alias.to_s != '/' -%>    
+    Alias <%= our_webdav_alias -%> <%= our_webdav_dir_full %>
+    <Location <%= our_webdav_alias -%>>
+        Dav On
+    </Location>
+<% end -%>
+
+
+<% if ssl -%>    
+    SSLEngine on
+    SSLCertificateFile <%= sslcertificatefile_real %>
+    SSLCertificateKeyFile <%= sslcertificatekeyfile_real %>
+<%    if sslciphersuite -%>
+    SSLCipherSuite <%= sslciphersuite %>
+<%    end %>
+<%    if sslverifyclient -%>
+    SSLVerifyClient <%= sslverifyclient %>
+<%    end %>
+<%    if sslverifydepth -%>
+    SSLVerifyDepth  <%= sslverifydepth %> <% end %>
+<%    if ssloptions -%>
+    SSLOptions <%= ssloptions %> <% end %>
+<%    if sslcertificatechainfile -%>
+    SSLCertificateChainFile <%= sslcertificatechainfile %>
+<%    end %>
+<%    if sslcacertificatefile -%>
+    SSLCACertificateFile <%= sslcacertificatefile %>
+<%    end %>
+<%    if sslcarevocationfile -%>
+    SSLCARevocationFile <%= sslcarevocationfile %>
+<%    end %>
+<%    if requestheader -%>  
+<%       requestheader.each do |val| -%> 
+    RequestHeader set<%= val %>
+<%       end -%>
+<%    end -%>        
+<% end -%>
+
+
+<% if proxypass_real -%>
+    #basic reverse proxy setup this default disables forward proxying that if left unsecured would allow clients
+    #to proxy requests to any hosts through this server..
+    ProxyRequests Off
+
+    #Allow everyone to access the server
+    <Proxy *>
+        Order deny,allow
+        Allow from all
+    </Proxy>
+<% if proxypass_real -%>
+<%   proxypass_real.each do |entry| -%>
+    ProxyPass <%= entry %>
+    ProxyPassReverse <%= entry %>
+<%   end -%>
+<% end -%>
+    <% if proxypreservehost %>ProxyPreserveHost <%= proxypreservehost %> <% end -%>
+    
+    <Location />
+        <% if directoryindex -%>
+        DirectoryIndex <%= directoryindex %>
+        <% end -%>   
+        Options <%= options %>
+        AllowOverride <%= allowoverride %>
+        Order <%= auth_order %>
+        <% allow.each do |val| -%> 
+            <%= val %>
+        <% end -%>
+        <% if auth_enable -%>
+            AuthType <%= our_auth_type %>
+            AuthName "<%= our_auth_name %>"
+            AuthUserFile <%= our_auth_user_file %>
+            <%    auth_require_list.each do |require_entry| -%>
+                Require <%= require_entry %>
+            <%    end -%>
+        <% end -%>
+    </Location>
+    
+<% end -%>
+<% if balancer_manager_allow_from -%> 
+    #lockdown access to the balancer manager
+    <Location />
+       SetHandler balancer-manager
+       Order allow,deny
+       Allow from <%= balancer_manager_allow_from %>
+    </Location>
+<% end -%>
+<% extra_apache_lines.each do |val| -%> 
+    <%= val %>
+<% end -%>
+
+</VirtualHost>
+
+<% if include_ssl_redirect_http_site -%>
+<VirtualHost <%= our_vhost_listen %>:80 >
+    ServerName   <%= vhost_name %>
+    ServerAlias   www.<%= vhost_name %> <%= serveralias %>
+    CustomLog "|<%= cronolog %> <%= access_log -%>" <%= customlog %>
+    ErrorLog "|<%= cronolog %> <%= error_log -%>"
+    LogLevel <%= vhost_loglevel %>
+    #Generally left off
+    ServerSignature <%= serversignature %>
+    RedirectMatch permanent ^(.*)$ https://<%= vhost_name %>
+</VirtualHost>
+
+<% end -%>

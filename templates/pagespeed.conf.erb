@@ -1,0 +1,47 @@
+<IfModule pagespeed_module>
+    # Turn on mod_pagespeed. To completely disable mod_pagespeed, you
+    # can set this to "off".
+    ModPagespeed on
+
+    # Direct Apache to send all HTML output to the mod_pagespeed
+    # output handler.
+    AddOutputFilterByType MOD_PAGESPEED_OUTPUT_FILTER text/html
+
+    # The ModPagespeedFileCachePath and
+    # ModPagespeedGeneratedFilePrefix directories must exist and be
+    # writable by the apache user (as specified by the User
+    # directive).
+    ModPagespeedFileCachePath            "/var/mod_pagespeed/cache/"
+    ModPagespeedGeneratedFilePrefix      "/var/mod_pagespeed/files/"
+
+    # MP: we want to disable all pagespeed filters by default and then 
+    #     add after we have baselined performance with add_instrumentation
+    ModPagespeedRewriteLevel PassThrough
+
+    # Log page load time to the access log via a (204) request to 
+    # /mod_pagespeed_beacon?ets=load:{time-in-ms}
+    ModPagespeedEnableFilters add_instrumentation
+    <Location /mod_pagespeed_beacon>
+          SetHandler mod_pagespeed_beacon
+    </Location>
+
+    # This page lets you view statistics about the mod_pagespeed module.
+    <Location /mod_pagespeed_statistics>
+        Order allow,deny
+        # You may insert other "Allow from" lines to add hosts you want to
+        # allow to look at generated statistics.  Another possibility is
+        # to comment out the "Order" and "Allow" options from the config
+        # file, to allow any client that can reach your server to examine
+        # statistics.  This might be appropriate in an experimental setup or
+        # if the Apache server is protected by a reverse proxy that will
+        # filter URLs in some fashion.
+        Allow from localhost
+<% if has_variable?('apache_mod_pagespeed_stats_cidrs') -%>
+<%   apache_mod_pagespeed_stats_cidrs.to_a.each do |cidr| -%>
+        Allow from <%= cidr %>
+<%   end -%>
+<% end -%>
+        SetHandler mod_pagespeed_statistics
+    </Location>
+
+</IfModule>
