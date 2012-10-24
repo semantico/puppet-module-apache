@@ -1,5 +1,5 @@
 
-class apache::service::control {
+class apache::service::control inherits apache::config {
 
         exec { "reload-apache2":
                 command => "/etc/init.d/${apache2_service_name} reload",
