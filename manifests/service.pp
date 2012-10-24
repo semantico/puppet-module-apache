@@ -16,7 +16,7 @@ class apache::service {
                    $vhost_available_dir = "/etc/httpd/sites-available"
                    $cronolog = "/usr/sbin/cronolog"
                  }
-        default: { }
+        default: { fail("apache::service - $hostname - $operatingsystem not supported") }
     }
 
     File {
